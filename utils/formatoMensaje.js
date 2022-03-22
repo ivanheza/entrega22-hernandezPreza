@@ -1,18 +1,21 @@
 import moment from "moment"
+import {customAlphabet} from "nanoid"
 
+const msgID = customAlphabet("1234567890abcdef", 4)
 const date = moment().format("D-MMM-YY,h:mm a")
-const formatoMensaje = (mail, nombre, apellido, edad, alias, avatar, text) => {
+const formatoMensaje = (msg) => {
    return {
       author: {
-         id: mail,
-         nombre: nombre,
-         apellido: apellido,
-         edad: edad,
-         alias: alias,
-         avatar: avatar,
+         email: msg.author.email,
+         nombre: msg.author.nombre,
+         apellido: msg.author.apellido,
+         edad: msg.author.edad,
+         alias: msg.author.alias,
+         avatar: msg.author.avatar,
       },
-      text: text,
+      text: msg.text,
       time: date,
+      id: `m-${msgID()}`,
    }
 }
 

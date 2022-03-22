@@ -1,37 +1,14 @@
 import {promises as fs} from "fs"
 
-import {schema, normalize} from "normalizr"
-import util from "util"
-
-function print(objeto) {
-   console.log(util.inspect(objeto, false, 12, true))
-}
-
-// Definimos un esquema de usuarios (autores y comentadores)
-const authorSchema = new schema.Entity("autores")
-const msgSchema = {
-   author: authorSchema,
-}
-
 class ContenedorArchivo {
    constructor(ruta) {
       this.ruta = ruta
-   }
-
-   async readAll() {
-      try {
-         const data = await fs.readFile(this.ruta)
-         const mensajes = JSON.parse(data)
-
-         const nData = normalize(mensajes, [msgSchema])
-         //console.log(nData)
-         return nData
-      } catch (error) {}
    }
    async readData() {
       try {
          const data = await fs.readFile(this.ruta)
          const mensajes = JSON.parse(data)
+         //console.log(mensajes)
          return mensajes
       } catch (error) {}
    }

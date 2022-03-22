@@ -13,6 +13,7 @@ import {Server} from "socket.io"
 import formatoMensaje from "./utils/formatoMensaje.js"
 
 import msgDB from "./models/modelMensajeA.js"
+import normalizeMsgs from "./utils/normalizeMsg.js"
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 //handlebars
@@ -23,14 +24,13 @@ const hbs = create({
    partialsDir: path.join(app.get("views"), "partials"),
 })
 
-app.use(express.static("./public"))
-
 app.engine("handlebars", hbs.engine)
 app.set("view engine", "handlebars")
 app.set("views", "./views")
+app.use(express.static("./public"))
 
 app.get("/", (req, res) => {
-   res.render("index")
+   res.render("index", {title: "Entrega 22 - MOCKS Y NORMALIZR"})
 })
 //POST MOCKS
 app.post("/api/productos-test", async (req, res) => {
@@ -54,8 +54,8 @@ app.post("/api/productos-test", async (req, res) => {
 io.on("connection", async (socket) => {
    console.log("a user connected")
 
-   socket.emit("mensajes", await msgDB.readAll())
-
+   const data = normalizeMsgs(await msgDB.readData())
+   socket.emit("mensajes", data)
    socket.emit("loadProducts", await ProductosDB.getAll())
    socket.on("deleteProduct", async (id) => {
       console.log(id)
@@ -72,18 +72,9 @@ io.on("connection", async (socket) => {
    })
 
    socket.on("chatMessage", async (msg) => {
-      const mensaje = formatoMensaje(
-         msg.author.id,
-         msg.author.nombre,
-         msg.author.apellido,
-         msg.author.edad,
-         msg.author.alias,
-         msg.author.avatar,
-         msg.text
-      )
+      const mensaje = formatoMensaje(msg)
       await msgDB.newMensaje(mensaje)
-
-      io.sockets.emit("mensajes", await msgDB.readAll())
+      io.sockets.emit("mensajes", await normalizeMsgs(msgDB.readData()))
    })
    socket.on("typing", (data) => {
       //console.log(data)

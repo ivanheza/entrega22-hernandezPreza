@@ -20,7 +20,7 @@ chatForm.addEventListener("submit", (e) => {
    e.preventDefault()
    let message = {
       author: {
-         id: e.target.elements.email.value,
+         email: e.target.elements.email.value,
          nombre: e.target.elements.nombre.value,
          apellido: e.target.elements.apellido.value,
          edad: e.target.elements.edad.value,
@@ -30,17 +30,14 @@ chatForm.addEventListener("submit", (e) => {
       text: e.target.elements.inputChat.value,
    }
 
-   //console.log(message);
-   if (message.author.id.length == 0 || message.text.length == 0) {
+   console.log(message)
+   if (message.author.email.length == 0 || message.text.length == 0) {
       alert("No Puedes dejar los campos Vacios")
-
       e.target.elements.inputChat.focus()
    } else {
       socket.emit("chatMessage", message)
-
       e.target.elements.inputChat.value = ""
       e.target.elements.inputChat.focus()
-
       return false
    }
 })
@@ -51,28 +48,36 @@ inputChat.addEventListener("keypress", () => {
 })
 ///SOCKETS
 
-///NORMALIZER
+///////////////NORMALIZER
 
-const authorSchema = new normalizr.schema.Entity("autores")
-const msgSchema = {
-   id: "mensajes",
-   author: authorSchema,
-}
+const authorSchema = new normalizr.schema.Entity("author", {}, {idAttribute: "id"})
+const msgSchema = new normalizr.schema.Entity(
+   "post",
+   {author: authorSchema},
+   {idAttribute: "_id"}
+)
+const schemaMsgs = new normalizr.schema.Entity(
+   "posts",
+   {mensajes: [msgSchema]},
+   {idAttribute: "id"}
+)
 
 socket.on("mensajes", (data) => {
    typing.innerHTML = ""
-   const denormData = normalizr.denormalize(data.result, msgSchema, data.entities)
+   const dataSize = JSON.stringify(data).length
+   console.log(data, "data")
+   const denormData = normalizr.denormalize(data.result, schemaMsgs, data.entities)
    const denormSize = JSON.stringify(denormData).length
-   const normSize = JSON.stringify(data).length
+   console.log(denormData, "peso", denormSize)
 
-   console.log(denormData)
-   const result = (denormSize / normSize) * 100
+   const result = parseInt((denormSize * 100) / dataSize)
+   console.log(result)
 
    datosNorm.innerHTML = `
-   <h1>Tamaño datos sin comprimir: ${normSize} </h1>
-   <h1>Datos normalizados: ${denormSize} </h1>
-   <h1>Porcentaje de compresión: ${parseInt(100 - result)}%</h1>`
-   renderChat(data)
+   <h1>Datos normalizados: ${dataSize} </h1>
+   <h1>Datos des-normalizados: ${denormSize} </h1>
+   <h1>Porcentaje de compresión:${100 - result}% </h1>`
+   renderChat(denormData.mensajes)
 })
 
 socket.on("typing", (data) => {
@@ -114,12 +119,12 @@ socket.on("selectedProduct", (product) => {
 const renderChat = (data) => {
    console.log(data)
 
-   const html = data.result
+   const html = data
       .map((m) => {
          return `<div class="mensaje">
-         <img src="" alt="" />
-           <p id="datos" class="opacity-75 badge bg-secondary mb-1">
-                       ${m.author}<span class="mx-3 text-dark badge bg-warning">${m.time}</span>
+         <p id="datos" class="opacity-75 badge bg-secondary mb-1">
+         <img src=${m.author.avatar} width="20" alt="" />
+                       ${m.author.nombre}<span class="mx-3 text-dark badge bg-warning">${m.time}</span>
                              </p>
                              <p class="lead">${m.text}</p>
          </div>`
